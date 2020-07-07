@@ -9,7 +9,7 @@ import numpy as np
 import skimage.io
 from skimage import data, feature
 from skimage.color import rgb2gray
-from skimage.feature import ORB, blob_doh, match_descriptors, plot_matches
+from skimage.feature import blob_doh
 from skimage.measure import ransac
 from skimage.transform import FundamentalMatrixTransform, rotate
 from matplotlib.patches import ConnectionPatch
@@ -39,6 +39,7 @@ def moveImage():
     position_x = int(xPosition.get())
     positions = [(0, position_x), (position_x, position_x), (position_x, 0), (position_x, -position_x),
                  (0, -position_x), (-position_x, -position_x), (-position_x, 0), (-position_x, position_x)]
+    positions_in_directions = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO']
     moved_cords = []
     img = skimage.io.imread(pathIn)
     num_rows_original, num_cols_original = img.shape[:2]
@@ -62,8 +63,7 @@ def moveImage():
         compare_coords(keypoints_transformada, keypoints_original,
                        moved_cords, img_origin, img_translation)
         moved_cords.clear()
-    print('TERMINO')
-    graph(position_x, matches_array)
+    graph(positions_in_directions, matches_array)
     matches_array.clear()
 
 
@@ -100,15 +100,14 @@ def compare_coords(keypoints_transformed, keypoints_originales, kp_by_me, origin
                  original_image, transformed_image)
     matches_array.append(params(matches, keypoints_original_list))
     print(matches_array)
-    return True
 
 
 def graph(transformation, matches):
+    global matches_array
     plt.title('DoH')
     plt.xlabel('Grados de transformación')
-    plt.ylabel('Porcentaje (%)')
-    plt.plot(transformation, matches_array,
-             color="blue", label="No. coincidencias")
+    plt.ylabel('Porcentaje(%) de coincidencia')
+    plt.bar(transformation, matches_array, width=2, align='center', label='No. coincidencias')
     plt.xticks(transformation)
     plt.legend()
     plt.show()
@@ -179,6 +178,8 @@ def resizeImage():
         compare_coords(keypoints_transformada, keypoints_original,
                        resized_cords, img, resized)
         resized_cords.clear()
+    graph(size_array, matches_array)
+    matches_array.clear()
 
 
 def rotate_kp(point, radians, origin=(0, 0)):
@@ -193,6 +194,7 @@ def rotate_kp(point, radians, origin=(0, 0)):
 
 def rotateImage():
     global pathIn
+    global matches_array
     grades_array = []
     kp_by_me = []
 
@@ -201,8 +203,8 @@ def rotateImage():
 
     hip = math.sqrt(pow(num_rows_original, 2) + pow(num_cols_original, 2))//2
 
-    img_origin = cv2.copyMakeBorder(img, int(hip-(num_cols_original//2)), int(hip-(num_rows_original//2)), int(hip-(
-        num_cols_original//2)), int(hip-(num_rows_original//2)), cv2.BORDER_CONSTANT, value=None)
+    img_origin = cv2.copyMakeBorder(img, int(hip-(num_rows_original//2)), int(hip-(num_rows_original//2)), int(hip-(
+        num_cols_original//2)), int(hip-(num_cols_original//2)), cv2.BORDER_CONSTANT, value=None)
 
     new_num_rows_original, new_num_cols_original = img_origin.shape[:2]
     new_num_cols_original = new_num_cols_original/2
@@ -226,6 +228,8 @@ def rotateImage():
         compare_coords(keypoints_transformada,
                        keypoints_original, kp_by_me, img_origin, image_center)
         kp_by_me.clear()
+    graph(grades_array, matches_array)
+    matches_array.clear()
 
 
 def mainProcess(image_original, image_transformed):
